@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-       Copyright 2009-2021 the original author or authors.
+       Copyright 2009-2022 the original author or authors.
 
        Licensed under the Apache License, Version 2.0 (the "License");
        you may not use this file except in compliance with the License.
@@ -146,15 +146,15 @@
       <groupId>ognl</groupId>
       <artifactId>ognl</artifactId>
       <version>3.3.0</version>
-      <scope>compile</scope>
-      <optional>true</optional>
+<!--      <scope>compile</scope>-->
+<!--      <optional>true</optional>-->
     </dependency>
     <dependency>
       <groupId>org.javassist</groupId>
       <artifactId>javassist</artifactId>
       <version>3.28.0-GA</version>
-      <scope>compile</scope>
-      <optional>true</optional>
+<!--      <scope>compile</scope>-->
+<!--      <optional>true</optional>-->
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -320,10 +320,10 @@
           </systemProperties>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pdf-plugin</artifactId>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-pdf-plugin</artifactId>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
