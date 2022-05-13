@@ -17,6 +17,7 @@ package org.apache.ibatis.plugin;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,5 +48,37 @@ class PluginTest {
     }
 
   }
+
+
+
+
+  /**
+   * 插件嵌套
+   *
+   * @author pujian
+   * @date 2022/5/11 13:43
+   */
+  @Intercepts({@Signature(type = Map.class, method = "get", args = {Object.class})})
+  public static class AlwaysMapPlusPlugin implements Interceptor {
+    @Override
+    public Object intercept(Invocation invocation) throws InvocationTargetException, IllegalAccessException {
+      return invocation.proceed() + "-plus";
+    }
+
+  }
+  /**
+   * 两个插件都拦截执行
+   *
+   * @author pujian
+   * @date 2022/5/11 13:44
+   */
+  @Test
+  void mapPluginShouldInterceptGetTwice() {
+    Map map = new HashMap();
+    map = (Map) new AlwaysMapPlugin().plugin(map);
+    map = (Map) new AlwaysMapPlusPlugin().plugin(map);
+    assertEquals("Always-plus", map.get("Anything"));
+  }
+
 
 }

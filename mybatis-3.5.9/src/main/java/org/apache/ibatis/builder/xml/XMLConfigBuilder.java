@@ -103,20 +103,52 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      // 解析properties标签。property的优先级从低到高：
+      // properties标签内指定的属性 < properties标签的resource属性指定的 < url属性指定的 < SqlSessionFactoryBuilder#build()方法传入的
       propertiesElement(root.evalNode("properties"));
+
+      // settings相关 begin...
+      // 解析settings标签，转换为Properties对象，同时验证是否存在无法解析的setting name(Configuration中是否存在这个属性)
       Properties settings = settingsAsProperties(root.evalNode("settings"));
+      // 加载自定义VFS(虚拟文件系统)
       loadCustomVfs(settings);
+      // 指定Mybatis使用哪种log日志实现
       loadCustomLogImpl(settings);
+      // settings相关 end
+
+      // 解析typeAliases标签，将别名注册到TypeAliasRegistry，TypeAliasRegistry就是一个Map<aliasName, Class<?>>
       typeAliasesElement(root.evalNode("typeAliases"));
+
+      // 解析plugins标签
+      // 调用无参构造方法实例化Interceptor并调用setProperties()方法
+      // 调用Configuration#addInterceptor()方法依次将Interceptor存入Configuration的interceptorChain中
       pluginElement(root.evalNode("plugins"));
+
+      // 解析objectFactory标签，调用无参构造方法实例化ObjectFactory并调用setProperties()方法，然后存入Configuration。
+      // ObjectFactory的作用：每次MyBatis创建结果对象的新实例时，它都会使用一个对象工厂（ObjectFactory）实例来完成实例化工作。
+      // 默认的对象工厂需要做的仅仅是实例化目标类，要么通过默认无参构造方法，要么通过存在的参数映射来调用带有参数的构造方法。
+      // 如果想覆盖对象工厂的默认行为，可以通过创建自己的对象工厂来实现。
       objectFactoryElement(root.evalNode("objectFactory"));
+
+      // 解析objectWrapperFactory标签，调用无参构造方法实例化后存入Configuration
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+
+      // 解析reflectorFactory标签，调用无参构造方法实例化后存入Configuration
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+
+      // 设置Configuration属性
       settingsElement(settings);
+
       // read it after objectFactory and objectWrapperFactory issue #631
+      // 解析environments标签，再解析匹配的environment标签
+      // 解析environment标签中的transactionManager标签与dataSource标签
+      // 解析完毕后得到一个Environment对象存入Configuration
       environmentsElement(root.evalNode("environments"));
+
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+
       typeHandlerElement(root.evalNode("typeHandlers"));
+
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);

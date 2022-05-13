@@ -40,11 +40,27 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
 
   private static final long serialVersionUID = -8855120656740914948L;
 
+  /**
+   * 调用无参构造方法创建类实例
+   *
+   * @param type 待实例化的类
+   * @date 2022/5/12 16:58
+   * @return 实例化的对象
+   */
   @Override
   public <T> T create(Class<T> type) {
     return create(type, null, null);
   }
 
+  /**
+   * 调用有参构造方法创建类实例
+   *
+   * @param type 待实例化的类
+   * @param constructorArgTypes 构造方法参数类型集合
+   * @param constructorArgs 构造方法参数集合
+   * @date 2022/5/12 16:56
+   * @return 实例化的对象
+   */
   @SuppressWarnings("unchecked")
   @Override
   public <T> T create(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
@@ -53,10 +69,19 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
     return (T) instantiateClass(classToCreate, constructorArgTypes, constructorArgs);
   }
 
+  /**
+   * 实例化
+   *
+   * @param type 待实例化的类
+   * @param constructorArgTypes 构造方法参数类型集合
+   * @param constructorArgs 构造方法参数集合
+   * @date 2022/5/12 16:58
+   * @return 实例化的对象
+   */
   private  <T> T instantiateClass(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     try {
       Constructor<T> constructor;
-      if (constructorArgTypes == null || constructorArgs == null) {
+      if (constructorArgTypes == null || constructorArgs == null) { // 反射获取类的无参构造方法并实例化
         constructor = type.getDeclaredConstructor();
         try {
           return constructor.newInstance();
@@ -69,6 +94,7 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
           }
         }
       }
+      // 反射获取类的有参构造方法
       constructor = type.getDeclaredConstructor(constructorArgTypes.toArray(new Class[0]));
       try {
         return constructor.newInstance(constructorArgs.toArray(new Object[0]));
@@ -89,6 +115,14 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
     }
   }
 
+  /**
+   * 若是集合类的接口，返回该集合接口对应的默认实现类
+   * 否则返回本身
+   *
+   * @param type
+   * @date 2022/5/12 17:01
+   * @return java.lang.Class<?>
+   */
   protected Class<?> resolveInterface(Class<?> type) {
     Class<?> classToCreate;
     if (type == List.class || type == Collection.class || type == Iterable.class) {

@@ -41,11 +41,23 @@ public class Plugin implements InvocationHandler {
     this.signatureMap = signatureMap;
   }
 
+  /**
+   * 对目标对象包装代理
+   * 若目标对象不需要代理，则直接返回目标对象，否则返回代理对象
+   *
+   * @param target 目标对象
+   * @param interceptor 拦截器
+   * @return java.lang.Object 代理对象或原对象
+   */
   public static Object wrap(Object target, Interceptor interceptor) {
+    // 解析入参interceptor类上定义的@Intercepts与@Signature注解
+    // 得到key(要拦截的类)->value(类中要拦截的方法) 的Map
     Map<Class<?>, Set<Method>> signatureMap = getSignatureMap(interceptor);
     Class<?> type = target.getClass();
+    // 获取目标对象实现的接口中需要进行拦截代理的接口
     Class<?>[] interfaces = getAllInterfaces(type, signatureMap);
     if (interfaces.length > 0) {
+      // 生成动态代理对象
       return Proxy.newProxyInstance(
           type.getClassLoader(),
           interfaces,
@@ -74,10 +86,13 @@ public class Plugin implements InvocationHandler {
       throw new PluginException("No @Intercepts annotation was found in interceptor " + interceptor.getClass().getName());
     }
     Signature[] sigs = interceptsAnnotation.value();
+    // key(需要拦截的类)->(该类中需被拦截的方法集合)
     Map<Class<?>, Set<Method>> signatureMap = new HashMap<>();
     for (Signature sig : sigs) {
+      // key(clazz)若存在，则返回value(需拦截的方法集合)；若key不存在，则put(key, new HashSet<>())
       Set<Method> methods = MapUtil.computeIfAbsent(signatureMap, sig.type(), k -> new HashSet<>());
       try {
+        // 将需要拦截的方法追加到集合中
         Method method = sig.type().getMethod(sig.method(), sig.args());
         methods.add(method);
       } catch (NoSuchMethodException e) {
