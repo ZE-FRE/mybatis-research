@@ -15,12 +15,6 @@
  */
 package org.apache.ibatis.builder.xml;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.Properties;
-
-import javax.sql.DataSource;
-
 import org.apache.ibatis.builder.BaseBuilder;
 import org.apache.ibatis.builder.BuilderException;
 import org.apache.ibatis.datasource.DataSourceFactory;
@@ -39,13 +33,14 @@ import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.reflection.ReflectorFactory;
 import org.apache.ibatis.reflection.factory.ObjectFactory;
 import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
-import org.apache.ibatis.session.AutoMappingBehavior;
-import org.apache.ibatis.session.AutoMappingUnknownColumnBehavior;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.ExecutorType;
-import org.apache.ibatis.session.LocalCacheScope;
+import org.apache.ibatis.session.*;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.type.JdbcType;
+
+import javax.sql.DataSource;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.Properties;
 
 /**
  * @author Clinton Begin
@@ -110,7 +105,7 @@ public class XMLConfigBuilder extends BaseBuilder {
       // settings相关 begin...
       // 解析settings标签，转换为Properties对象，同时验证是否存在无法解析的setting name(Configuration中是否存在这个属性)
       Properties settings = settingsAsProperties(root.evalNode("settings"));
-      // 加载自定义VFS(虚拟文件系统)
+      // 加载自定义VFS
       loadCustomVfs(settings);
       // 指定Mybatis使用哪种log日志实现
       loadCustomLogImpl(settings);
@@ -140,16 +135,24 @@ public class XMLConfigBuilder extends BaseBuilder {
       settingsElement(settings);
 
       // read it after objectFactory and objectWrapperFactory issue #631
-      // 解析environments标签，再解析匹配的environment标签
+      // 解析environments标签，再解析environments标签的default属性匹配的environment标签
       // 解析environment标签中的transactionManager标签与dataSource标签
       // 解析完毕后得到一个Environment对象存入Configuration
       environmentsElement(root.evalNode("environments"));
 
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
 
+      // 解析typeHandlers标签，读取出javaType、jdbcType以及handler三个属性的值；另外也可以按package扫描包注册
+      // 如果typeHandler标签上没有javaType、jdbcType属性，则会解析handler上面对应的@MappedTypes与@MappedJdbcTypes注解
+      // 如果还未能确定javaType，如果handler继承自BaseTypeHandler<T>或者TypeReference<T>，则会将该泛型当作javaType，否则javaType为null
+      // 最后会注册到TypeHandlerRegistry.typeHandlerMap中
+      // Map<javaType, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>();
       typeHandlerElement(root.evalNode("typeHandlers"));
 
+      // 解析mappers标签，同样可以按package扫描包添加(此种方式将package下面的所有interface加载)
+      // mapper标签可以用resource、url或class属性来指定Mapper的位置，但是一个mapper标签中只允许存在一种方式来指定
       mapperElement(root.evalNode("mappers"));
+
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
     }
@@ -370,6 +373,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void typeHandlerElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        // 按包注册
         if ("package".equals(child.getName())) {
           String typeHandlerPackage = child.getStringAttribute("name");
           typeHandlerRegistry.register(typeHandlerPackage);
@@ -382,11 +386,15 @@ public class XMLConfigBuilder extends BaseBuilder {
           Class<?> typeHandlerClass = resolveClass(handlerTypeName);
           if (javaTypeClass != null) {
             if (jdbcType == null) {
+              // 指定了javaType，未指定jdbcType
               typeHandlerRegistry.register(javaTypeClass, typeHandlerClass);
             } else {
+              // javaType与jdbcType都指定了
               typeHandlerRegistry.register(javaTypeClass, jdbcType, typeHandlerClass);
             }
           } else {
+            // javaType和jdbcType都未指定
+            // 从类上获取@MappedTypes与@MappedJdbcTypes注解
             typeHandlerRegistry.register(typeHandlerClass);
           }
         }
