@@ -22,12 +22,28 @@ import org.apache.ibatis.reflection.factory.ObjectFactory;
 import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
+ * 包装对象的Wrapper
+ *
  * @author Clinton Begin
  */
 public interface ObjectWrapper {
 
+  /**
+   * 获取对象某个属性的值
+   *
+   * @param prop 属性描述
+   * @date 2022/5/18 16:52
+   */
   Object get(PropertyTokenizer prop);
 
+  /**
+   * 设置对象某个属性的值
+   *
+   * @param prop 属性描述
+   * @param value 设置的值
+   * @author pujian
+   * @date 2022/5/18 16:53
+   */
   void set(PropertyTokenizer prop, Object value);
 
   String findProperty(String name, boolean useCamelCaseMapping);
@@ -46,6 +62,12 @@ public interface ObjectWrapper {
 
   MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory);
 
+  /**
+   * 被包装的对象是否是Collection集合
+   *
+   * @date 2022/5/18 16:54
+   * @return boolean
+   */
   boolean isCollection();
 
   void add(Object element);

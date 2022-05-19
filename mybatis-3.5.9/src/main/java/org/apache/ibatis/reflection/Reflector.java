@@ -63,8 +63,11 @@ public class Reflector {
 
   public Reflector(Class<?> clazz) {
     type = clazz;
+    // 设置默认无参构造方法
     addDefaultConstructor(clazz);
+    // 获取该类的所有方法，包括超类的，如果该类是抽象类，则还会获取该抽象类实现的接口的方法
     Method[] classMethods = getClassMethods(clazz);
+
     addGetMethods(classMethods);
     addSetMethods(classMethods);
     addFields(clazz);
@@ -307,6 +310,12 @@ public class Reflector {
     }
   }
 
+  /**
+   * 获取方法签名
+   *
+   * @param method
+   * @return 返回值类型全限定名#方法名:参数1类型全限定名,参数2类型全限定名,参数3类型全限定名...
+   */
   private String getSignature(Method method) {
     StringBuilder sb = new StringBuilder();
     Class<?> returnType = method.getReturnType();

@@ -109,6 +109,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
     try {
       unresolvedCacheRef = true;
+      // 从Configuration.caches这个Map<String, Cache>中根据key为namespace取出Cache
       Cache cache = configuration.getCache(namespace);
       if (cache == null) {
         throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.");

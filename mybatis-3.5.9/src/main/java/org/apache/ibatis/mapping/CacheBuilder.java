@@ -91,16 +91,21 @@ public class CacheBuilder {
 
   public Cache build() {
     setDefaultImplementations();
+    // 反射实例化Cache
     Cache cache = newBaseCacheInstance(implementation, id);
+    // 设置属性
     setCacheProperties(cache);
     // issue #352, do not apply decorators to custom caches
     if (PerpetualCache.class.equals(cache.getClass())) {
       for (Class<? extends Cache> decorator : decorators) {
+        // 装饰cache
         cache = newCacheDecoratorInstance(decorator, cache);
         setCacheProperties(cache);
       }
+      // 再装饰cache
       cache = setStandardDecorators(cache);
     } else if (!LoggingCache.class.isAssignableFrom(cache.getClass())) {
+      // 当前cache不是继承自LoggingCache，用LoggingCache装饰一下
       cache = new LoggingCache(cache);
     }
     return cache;

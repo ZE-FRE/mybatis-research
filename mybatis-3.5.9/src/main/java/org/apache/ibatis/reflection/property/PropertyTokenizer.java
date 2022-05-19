@@ -18,12 +18,28 @@ package org.apache.ibatis.reflection.property;
 import java.util.Iterator;
 
 /**
+ * 属性表示器
+ * 支持如：user、user.username、user.address.district、user[0].username等
+ *
  * @author Clinton Begin
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
+  /**
+   * 属性名
+   */
   private String name;
+  /**
+   * 已处理的部分
+   * 如：new PropertyTokenizer("user.address.district")，则已处理部分就是user，剩下部分由children字段持有
+   */
   private final String indexedName;
+  /**
+   * 记录数组形式的属性的下标值，如new PropertyTokenizer("user[0]")，则index为0
+   */
   private String index;
+  /**
+   * children，如new PropertyTokenizer("user.address.district")，则children为"address.district"
+   */
   private final String children;
 
   public PropertyTokenizer(String fullname) {

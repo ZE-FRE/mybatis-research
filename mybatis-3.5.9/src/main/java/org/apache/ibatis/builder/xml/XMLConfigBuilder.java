@@ -149,7 +149,7 @@ public class XMLConfigBuilder extends BaseBuilder {
       // Map<javaType, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>();
       typeHandlerElement(root.evalNode("typeHandlers"));
 
-      // 解析mappers标签，同样可以按package扫描包添加(此种方式将package下面的所有interface加载)
+      // 解析mappers标签，同样可以按package扫描包添加(此种方式将加载package下面的所有interface)
       // mapper标签可以用resource、url或class属性来指定Mapper的位置，但是一个mapper标签中只允许存在一种方式来指定
       mapperElement(root.evalNode("mappers"));
 
@@ -405,29 +405,37 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        // 按包批量加载
         if ("package".equals(child.getName())) {
           String mapperPackage = child.getStringAttribute("name");
+          // 由Configuration.mapperRegistry来加载
           configuration.addMappers(mapperPackage);
         } else {
           String resource = child.getStringAttribute("resource");
           String url = child.getStringAttribute("url");
           String mapperClass = child.getStringAttribute("class");
-          if (resource != null && url == null && mapperClass == null) {
+          if (resource != null && url == null && mapperClass == null) { // 只指定了resource
             ErrorContext.instance().resource(resource);
+            // 将指定的xml resource加载为流
             try(InputStream inputStream = Resources.getResourceAsStream(resource)) {
+              // 实例化XMLMapperBuilder，由它来解析mapper xml文件
               XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
               mapperParser.parse();
             }
-          } else if (resource == null && url != null && mapperClass == null) {
+          } else if (resource == null && url != null && mapperClass == null) { // 只指定了url
             ErrorContext.instance().resource(url);
+            // 将指定的xml url加载为流
             try(InputStream inputStream = Resources.getUrlAsStream(url)){
+              // 由XMLMapperBuilder解析mapper xml文件
               XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url, configuration.getSqlFragments());
               mapperParser.parse();
             }
-          } else if (resource == null && url == null && mapperClass != null) {
+          } else if (resource == null && url == null && mapperClass != null) { // 只指定了class
+            // 通过反射加载mapper类文件
             Class<?> mapperInterface = Resources.classForName(mapperClass);
+            // 由Configuration.mapperRegistry来加载
             configuration.addMapper(mapperInterface);
-          } else {
+          } else { // resource、url、class出现了两个及以上，报错
             throw new BuilderException("A mapper element may only specify a url, resource or class, but not more than one.");
           }
         }

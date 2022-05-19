@@ -90,9 +90,17 @@ public class XMLMapperBuilder extends BaseBuilder {
     this.resource = resource;
   }
 
+  /**
+   * 重要，解析mapper xml的核心方法
+   *
+   * @date 2022/5/17 16:31
+   */
   public void parse() {
+    // 先判断是否已解析过
     if (!configuration.isResourceLoaded(resource)) {
+      // 解析mapper标签
       configurationElement(parser.evalNode("/mapper"));
+      // 解析后往Set中存一下，表示已解析过的mapper xml
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
     }
@@ -112,12 +120,23 @@ public class XMLMapperBuilder extends BaseBuilder {
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      // 记录mapper的namespace
       builderAssistant.setCurrentNamespace(namespace);
+
+      // 解析cache-ref标签
       cacheRefElement(context.evalNode("cache-ref"));
+
+      // 解析cache标签
       cacheElement(context.evalNode("cache"));
+
+      // parameterMap已废弃，未来版本可能会移除，不需关心
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+
+      // 解析sql标签
       sqlElement(context.evalNodes("/mapper/sql"));
+
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -189,11 +208,15 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheRefElement(XNode context) {
     if (context != null) {
+      // 以当前mapper的namespace为key，cacheRef标签的namespace为value放入Configuration.cacheRefMap
       configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
+
       CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
       try {
+        // 以cacheRef标签的namespace为key，拿到Cache，存到this.builderAssistant的currentCache字段
         cacheRefResolver.resolveCacheRef();
       } catch (IncompleteElementException e) {
+        // 未找到Cache(Configuration.caches这个Map中不存在这个Cache)
         configuration.addIncompleteCacheRef(cacheRefResolver);
       }
     }
@@ -201,13 +224,19 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheElement(XNode context) {
     if (context != null) {
+      // 获取属性type的值，默认值为PERPETUAL
       String type = context.getStringAttribute("type", "PERPETUAL");
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+      // 获取属性eviction的值，默认值为LRU
       String eviction = context.getStringAttribute("eviction", "LRU");
       Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+      // 获取属性刷新间隔的值
       Long flushInterval = context.getLongAttribute("flushInterval");
+      // 获取属性size的值
       Integer size = context.getIntAttribute("size");
+      // 获取属性readOnly的值，默认值为false
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+      // 获取属性blocking的值，默认值为false
       boolean blocking = context.getBooleanAttribute("blocking", false);
       Properties props = context.getChildrenAsProperties();
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
@@ -336,9 +365,13 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void sqlElement(List<XNode> list) {
+    // 如果主配置文件配置了databaseIdProvider标签
+    // 遍历所有sql标签，先根据databaseId将sql节点存入Map
     if (configuration.getDatabaseId() != null) {
       sqlElement(list, configuration.getDatabaseId());
     }
+    // 遍历所有sql标签，不带databaseId将sql节点存入Map
+    // 如果有两个sql标签的id相同，一个带databaseId属性，一个不带，则此处不会再注册那个id相同但是不带databaseId属性的sql节点
     sqlElement(list, null);
   }
 
@@ -346,6 +379,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     for (XNode context : list) {
       String databaseId = context.getStringAttribute("databaseId");
       String id = context.getStringAttribute("id");
+      // 拼接为：currentNamespace + "." + id
       id = builderAssistant.applyCurrentNamespace(id, false);
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
         sqlFragments.put(id, context);
