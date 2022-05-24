@@ -32,22 +32,47 @@ import org.apache.ibatis.reflection.ParamNameUtil;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * resultMap标签实体
+ *
  * @author Clinton Begin
  */
 public class ResultMap {
   private Configuration configuration;
 
+  /**
+   * resultMap标签的id属性
+   */
   private String id;
+  /**
+   * resultMap标签的type属性，全限定名或别名
+   */
   private Class<?> type;
+  /**
+   * resultMap标签的result子标签集合
+   */
   private List<ResultMapping> resultMappings;
+  /**
+   * resultMap标签的id子标签集合
+   */
   private List<ResultMapping> idResultMappings;
+  /**
+   * resultMap标签的constructor子标签集合
+   */
   private List<ResultMapping> constructorResultMappings;
+
   private List<ResultMapping> propertyResultMappings;
   private Set<String> mappedColumns;
   private Set<String> mappedProperties;
+  /**
+   * resultMap标签的discriminator子标签
+   */
   private Discriminator discriminator;
+
   private boolean hasNestedResultMaps;
   private boolean hasNestedQueries;
+  /**
+   * resultMap标签的autoMapping属性，是否开启自动映射
+   */
   private Boolean autoMapping;
 
   private ResultMap() {

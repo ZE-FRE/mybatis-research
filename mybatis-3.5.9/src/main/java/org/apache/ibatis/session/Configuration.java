@@ -127,6 +127,12 @@ public class Configuration {
   protected Integer defaultFetchSize;
   protected ResultSetType defaultResultSetType;
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
+  /**
+   * 自动映射行为：
+   * NONE - 禁用自动映射。仅对手动映射的属性进行映射(即只映射resultMap中指定的属性)。
+   * PARTIAL - 对除在内部定义了嵌套结果映射（也就是连接的属性）以外的属性进行映射
+   * FULL - 自动映射所有属性。
+   */
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
 
@@ -161,7 +167,25 @@ public class Configuration {
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
 
+  /**
+   * 用于存放已加载的资源名，这里的资源指Mapper接口以及mapper xml文件
+   * 1、加载mapper xml文件时，存放指定的xml路径名(resouce或url指定的值)，如cn/zefre/mybatis/mapper/xml/UserMapper.xml
+   * mapper xml加载过后，会尝试用反射加载mapper xml的namespace指定的Mapper接口。
+   *    如果存在该Mapper接口，则调用Configuration#addMapper(Class clazz)去加载Mapper接口
+   *    此时会往这里面存一个元素，元素为：namespace:namespace值，如namespace:cn.zefre.mybatis.mapper.UserMapper
+   *    目的是避免之后加载Mapper接口时又去加载对应的mapper xml(也就是说在加载Mapper接口时有判断namespace:cn.zefre.mybatis.mapper.UserMapper是否存在的逻辑)
+   * 2、加载Mapper接口时，存放该接口.toString()，如：interface cn.zefre.mybatis.mapper.UserMapper
+   *
+   * 示例：
+   * loadedResources[0] cn/zefre/mybatis/mapper/xml/UserMapper.xml
+   * loadedResources[1] namespace:cn.zefre.mybatis.mapper.UserMapper
+   * loadedResources[2] interface cn.zefre.mybatis.mapper.UserMapper
+   */
   protected final Set<String> loadedResources = new HashSet<>();
+
+  /**
+   * 存放sql标签节点
+   */
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
 
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();

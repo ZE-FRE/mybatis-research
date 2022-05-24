@@ -115,17 +115,29 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+      // 尝试加载对应的mapper xml
       loadXmlResource();
+      // 标记已加载此Mapper接口
       configuration.addLoadedResource(resource);
+      // 记录currentNamespace，值为Mapper接口全限定名
       assistant.setCurrentNamespace(type.getName());
+      // 解析Cache(解析@CacheNamespace注解获取各属性值，如eviction、flushInterval、size等属性，
+      // 然后还是调MapperBuilderAssistant#useNewCache()方法构建Cache实例)
       parseCache();
+      // 解析@CacheNamespaceRef注解，获取注解上的属性值
+      // 最后还是调MapperBuilderAssistant#useCacheRef()方法
       parseCacheRef();
+
+      // 获取Mapper接口的所有方法
       for (Method method : type.getMethods()) {
+        // 如果该方法是桥接方法或default修饰的，则跳过
         if (!canHaveStatement(method)) {
           continue;
         }
+        // 若方法上有@Select或@SelectProvider注解修饰，且方法上没有@ResultMap注解修饰(@ResultMap注解作用：引用一个xml定义的resultMap)
         if (getAnnotationWrapper(method, false, Select.class, SelectProvider.class).isPresent()
             && method.getAnnotation(ResultMap.class) == null) {
+          // 解析ResultMap
           parseResultMap(method);
         }
         try {
@@ -162,6 +174,7 @@ public class MapperAnnotationBuilder {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
+    // 是否已加载过对应的mapper xml
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
@@ -224,11 +237,20 @@ public class MapperAnnotationBuilder {
   }
 
   private String parseResultMap(Method method) {
+    // 获取方法的返回值
     Class<?> returnType = getReturnType(method);
+    // 获取constructor传参注解
     Arg[] args = method.getAnnotationsByType(Arg.class);
+    // 获取属性注入注解
     Result[] results = method.getAnnotationsByType(Result.class);
+    // 获取@TypeDiscriminator注解，其功能与xml类型的mapper中的discriminator标签一样
     TypeDiscriminator typeDiscriminator = method.getAnnotation(TypeDiscriminator.class);
+    // 生成resultMapId
+    // 若此方法上用@Results注解指定id属性，则为：类全限定名.id属性的值
+    // 否则为：类全限定名.方法名-参数类型1-参数类型2...
     String resultMapId = generateResultMapName(method);
+
+    //
     applyResultMap(resultMapId, returnType, args, results, typeDiscriminator);
     return resultMapId;
   }
@@ -250,12 +272,18 @@ public class MapperAnnotationBuilder {
   }
 
   private void applyResultMap(String resultMapId, Class<?> returnType, Arg[] args, Result[] results, TypeDiscriminator discriminator) {
+    // 用于保存解析的constructor参数、result(即result标签)、association、collector、discriminator的结果
     List<ResultMapping> resultMappings = new ArrayList<>();
+    // 解析@Arg注解标记的constructor参数，保存到resultMappings
     applyConstructorArgs(args, returnType, resultMappings);
+    // 解析@Result注解，保存到resultMappings
     applyResults(results, returnType, resultMappings);
+    // 解析@TypeDiscriminator注解
     Discriminator disc = applyDiscriminator(resultMapId, returnType, discriminator);
     // TODO add AutoMappingBehaviour
+    // 构造ResultMap对象，并存入Configuration.resultMaps
     assistant.addResultMap(resultMapId, returnType, null, disc, resultMappings, null);
+
     createDiscriminatorResultMaps(resultMapId, returnType, discriminator);
   }
 
@@ -294,6 +322,7 @@ public class MapperAnnotationBuilder {
   }
 
   void parseStatement(Method method) {
+    // 获取参数类型，如果只有一个参数，则返回该参数本身的类型，如有多个，则返回ParamMap.class
     final Class<?> parameterTypeClass = getParameterType(method);
     final LanguageDriver languageDriver = getLanguageDriver(method);
 
@@ -473,7 +502,9 @@ public class MapperAnnotationBuilder {
       @SuppressWarnings("unchecked")
       Class<? extends TypeHandler<?>> typeHandler = (Class<? extends TypeHandler<?>>)
               ((result.typeHandler() == UnknownTypeHandler.class) ? null : result.typeHandler());
+      // 是否嵌套association或collection
       boolean hasNestedResultMap = hasNestedResultMap(result);
+      // 构造ResultMapping对象
       ResultMapping resultMapping = assistant.buildResultMapping(
           resultType,
           nullOrEmpty(result.property()),
@@ -489,6 +520,7 @@ public class MapperAnnotationBuilder {
           null,
           null,
           isLazy(result));
+      // 保存结果
       resultMappings.add(resultMapping);
     }
   }
@@ -557,6 +589,7 @@ public class MapperAnnotationBuilder {
       @SuppressWarnings("unchecked")
       Class<? extends TypeHandler<?>> typeHandler = (Class<? extends TypeHandler<?>>)
               (arg.typeHandler() == UnknownTypeHandler.class ? null : arg.typeHandler());
+      // 构造constructor的ResultMapping对象
       ResultMapping resultMapping = assistant.buildResultMapping(
           resultType,
           nullOrEmpty(arg.name()),
@@ -572,6 +605,7 @@ public class MapperAnnotationBuilder {
           null,
           null,
           false);
+      // 保存结果
       resultMappings.add(resultMapping);
     }
   }
@@ -644,6 +678,7 @@ public class MapperAnnotationBuilder {
   private Optional<AnnotationWrapper> getAnnotationWrapper(Method method, boolean errorIfNoMatch,
       Collection<Class<? extends Annotation>> targetTypes) {
     String databaseId = configuration.getDatabaseId();
+    // 得到method上有targetTypes修饰(支持Repeatable)的Map，key:dataBaseId value:AnnotationWrapper
     Map<String, AnnotationWrapper> statementAnnotations = targetTypes.stream()
         .flatMap(x -> Arrays.stream(method.getAnnotationsByType(x))).map(AnnotationWrapper::new)
         .collect(Collectors.toMap(AnnotationWrapper::getDatabaseId, x -> x, (existing, duplicate) -> {
@@ -653,9 +688,11 @@ public class MapperAnnotationBuilder {
         }));
     AnnotationWrapper annotationWrapper = null;
     if (databaseId != null) {
+      // 根据databaseId从Map中取出注解
       annotationWrapper = statementAnnotations.get(databaseId);
     }
     if (annotationWrapper == null) {
+      // 取出没有指定databaseId属性的注解
       annotationWrapper = statementAnnotations.get("");
     }
     if (errorIfNoMatch && annotationWrapper == null && !statementAnnotations.isEmpty()) {

@@ -136,7 +136,9 @@ public class ResultMapping {
       // lock down collections
       resultMapping.flags = Collections.unmodifiableList(resultMapping.flags);
       resultMapping.composites = Collections.unmodifiableList(resultMapping.composites);
+      // 如果typeHandler为空，则根据javaType和jdbcType从TypeHandlerRegistry中取
       resolveTypeHandler();
+      // 校验
       validate();
       return resultMapping;
     }

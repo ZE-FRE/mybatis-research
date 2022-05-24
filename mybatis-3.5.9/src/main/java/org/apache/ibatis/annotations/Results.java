@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
 /**
  * The annotation that be grouping mapping definitions for property.
  *
+ * 相当于一个resultMap标签
+ *
  * <p>
  * <b>How to use:</b>
  *
@@ -48,6 +50,8 @@ import java.lang.annotation.Target;
 public @interface Results {
   /**
    * Returns the id of this result map.
+   *
+   * 此resultMap的id
    *
    * @return the id of this result map
    */

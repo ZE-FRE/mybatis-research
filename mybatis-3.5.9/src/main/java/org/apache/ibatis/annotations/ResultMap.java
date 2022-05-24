@@ -22,6 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 此注解作用：引用一个xml定义的resultMap
+ *
  * The annotation that specify result map names to use.
  *
  * <p>

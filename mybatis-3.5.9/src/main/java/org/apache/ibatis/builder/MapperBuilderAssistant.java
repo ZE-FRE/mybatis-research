@@ -419,13 +419,20 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String nestedResultMap,
       String notNullColumn,
       String columnPrefix,
-      Class<? extends TypeHandler<?>> typeHandler,
+      Class<? extends TypeHandler<?>> typeHandlerType,
       List<ResultFlag> flags,
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+
+    // 如果javaType为null，则去resultType这个Class中查询property对应的setter方法入参类型
+    // 如果javaType不为null，则就是javaType
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
-    TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
+
+    // 如果typeHandlerType为null，则返回null
+    // 如果typeHandlerType不为null，则从TypeHandlerRegistry中取，如果没有，则实例化一个TypeHandler
+    TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandlerType);
+
     List<ResultMapping> composites;
     if ((nestedSelect == null || nestedSelect.isEmpty()) && (foreignColumn == null || foreignColumn.isEmpty())) {
       composites = Collections.emptyList();
