@@ -1,8 +1,8 @@
 
-package cn.zefre.mybatis.mapper;
+package org.apache.ibatis.zefre.mapper;
 
-import cn.zefre.mybatis.entity.User;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.zefre.entity.User;
 
 
 /**

@@ -4,14 +4,13 @@
   "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
 
-  <properties resource="db.properties">
-  </properties>
+  <properties resource="org/apache/ibatis/zefre/resources/db.properties"/>
 
   <environments default="development">
 
     <environment id="development">
       <transactionManager type="JDBC"/>
-      <dataSource type="POOLED">
+      <dataSource type="UNPOOLED">
         <property name="driver" value="${driver}"/>
         <property name="url" value="${url}"/>
         <property name="username" value="${username}"/>
@@ -22,7 +21,8 @@
   </environments>
 
   <mappers>
-    <mapper resource="cn/zefre/mybatis/mapper/xml/UserMapper.xml"/>
+    <mapper resource="org/apache/ibatis/zefre/mapper/xml/UserMapper.xml"/>
+<!--    <mapper class="org.apache.ibatis.zefre.mapper.UserMapper"/>-->
   </mappers>
 
 </configuration>
