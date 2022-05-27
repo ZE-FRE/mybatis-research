@@ -138,6 +138,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       // 解析sql标签
       sqlElement(context.evalNodes("/mapper/sql"));
 
+      // 解析的select、insert、update、delete标签
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);

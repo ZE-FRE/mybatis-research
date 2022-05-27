@@ -53,8 +53,15 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
+  /**
+   * 解析一个statement节点(insert或delete或update或select标签)
+   *
+   * @date 2022/5/25 9:52
+   */
   public void parseStatementNode() {
+    // 获取id属性
     String id = context.getStringAttribute("id");
+    // 获取databaseId属性
     String databaseId = context.getStringAttribute("databaseId");
 
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {

@@ -29,12 +29,17 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 表示一条select|update|insert|delete语句
+ *
  * @author Clinton Begin
  */
 public final class MappedStatement {
 
   private String resource;
   private Configuration configuration;
+  /**
+   * statement id，用于唯一标识statement
+   */
   private String id;
   private Integer fetchSize;
   private Integer timeout;
