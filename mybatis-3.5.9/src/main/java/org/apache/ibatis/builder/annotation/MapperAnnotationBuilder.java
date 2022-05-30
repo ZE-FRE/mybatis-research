@@ -128,7 +128,7 @@ public class MapperAnnotationBuilder {
       // 最后还是调MapperBuilderAssistant#useCacheRef()方法
       parseCacheRef();
 
-      // 获取Mapper接口的所有方法
+      // 获取Mapper接口的所有方法，依次解析
       for (Method method : type.getMethods()) {
         // 如果该方法是桥接方法或default修饰的，则跳过
         if (!canHaveStatement(method)) {
@@ -141,12 +141,15 @@ public class MapperAnnotationBuilder {
           parseResultMap(method);
         }
         try {
+          // 解析statement
           parseStatement(method);
         } catch (IncompleteElementException e) {
+          // 若此Mapper接口的CacheNamespaceRef注解引用的cache还未被实例化
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+    // 重新解析未成功解析的method
     parsePendingMethods();
   }
 
@@ -188,6 +191,7 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        // 解析Mapper接口对应的mapper xml
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
         xmlParser.parse();
       }
@@ -323,20 +327,31 @@ public class MapperAnnotationBuilder {
 
   void parseStatement(Method method) {
     // 获取参数类型，如果只有一个参数，则返回该参数本身的类型，如有多个，则返回ParamMap.class
+    // 这里描述的一个参数与多个参数需要除开RowBounds、ResultHandler
     final Class<?> parameterTypeClass = getParameterType(method);
     final LanguageDriver languageDriver = getLanguageDriver(method);
 
-    getAnnotationWrapper(method, true, statementAnnotationTypes).ifPresent(statementAnnotation -> {
+    // 取得方法上被以下注解Select、Update、Insert、Delete、SelectProvider、UpdateProvider、InsertProvider、DeleteProvider
+    // 中的任何一个修饰的注解(出现两个以上会抛异常，注意：尽管以上注解都是Repeatable，同一个注解出现两次也会抛异常)
+    // 返回一个AnnotationWrapper
+    getAnnotationWrapper(method, true, statementAnnotationTypes)
+      // 有匹配的注解
+      .ifPresent(statementAnnotation -> {
+      // 构造SqlSource，它表示一个mapped statement的内容，由它创建要执行的sql
       final SqlSource sqlSource = buildSqlSource(statementAnnotation.getAnnotation(), parameterTypeClass, languageDriver, method);
       final SqlCommandType sqlCommandType = statementAnnotation.getSqlCommandType();
+      // 取得方法上的Options注解，如果没有就为null
       final Options options = getAnnotationWrapper(method, false, Options.class).map(x -> (Options)x.getAnnotation()).orElse(null);
+      // 拼接注解方式的mappedStatementId
       final String mappedStatementId = type.getName() + "." + method.getName();
 
       final KeyGenerator keyGenerator;
       String keyProperty = null;
       String keyColumn = null;
+      // insert和update操作需要确定KeyGenerator
       if (SqlCommandType.INSERT.equals(sqlCommandType) || SqlCommandType.UPDATE.equals(sqlCommandType)) {
         // first check for SelectKey annotation - that overrides everything else
+        //  取得方法上的SelectKey注解，如果没有就为null
         SelectKey selectKey = getAnnotationWrapper(method, false, SelectKey.class).map(x -> (SelectKey)x.getAnnotation()).orElse(null);
         if (selectKey != null) {
           keyGenerator = handleSelectKeyAnnotation(selectKey, mappedStatementId, getParameterType(method), languageDriver);
@@ -352,6 +367,9 @@ public class MapperAnnotationBuilder {
         keyGenerator = NoKeyGenerator.INSTANCE;
       }
 
+      /*
+       * 下面都是确定属性值
+       */
       Integer fetchSize = null;
       Integer timeout = null;
       StatementType statementType = StatementType.PREPARED;
@@ -384,6 +402,7 @@ public class MapperAnnotationBuilder {
         }
       }
 
+      // 构造MappedStatement并存入Configuration.mappedStatements
       assistant.addMappedStatement(
           mappedStatementId,
           sqlSource,
@@ -675,10 +694,20 @@ public class MapperAnnotationBuilder {
     return getAnnotationWrapper(method, errorIfNoMatch, Arrays.asList(targetTypes));
   }
 
+  /**
+   * 在给定的注解集合中查找方法上匹配的注解
+   * 只能匹配一个注解，对于Repeatable可重复性注解，也只能出现一次
+   *
+   * @param method 指定方法
+   * @param errorIfNoMatch 未匹配是否抛出异常
+   * @param targetTypes 查找的目标注解集合
+   * @return 匹配的注解
+   */
   private Optional<AnnotationWrapper> getAnnotationWrapper(Method method, boolean errorIfNoMatch,
       Collection<Class<? extends Annotation>> targetTypes) {
     String databaseId = configuration.getDatabaseId();
-    // 得到method上有targetTypes修饰(支持Repeatable)的Map，key:dataBaseId value:AnnotationWrapper
+    // 得到method上与目标注解集合匹配的Map，以注解上的databaseId属性值为key，注解本身为value(即：key:dataBaseId value:AnnotationWrapper)
+    // 此Map的key最多只有两个元素：databaseId的值以及空字符串""
     Map<String, AnnotationWrapper> statementAnnotations = targetTypes.stream()
         .flatMap(x -> Arrays.stream(method.getAnnotationsByType(x))).map(AnnotationWrapper::new)
         .collect(Collectors.toMap(AnnotationWrapper::getDatabaseId, x -> x, (existing, duplicate) -> {
@@ -686,6 +715,7 @@ public class MapperAnnotationBuilder {
               existing.getAnnotation(), duplicate.getAnnotation(),
               method.getDeclaringClass().getName() + "." + method.getName()));
         }));
+    // 下面根据key取出AnnotationWrapper
     AnnotationWrapper annotationWrapper = null;
     if (databaseId != null) {
       // 根据databaseId从Map中取出注解
@@ -697,6 +727,7 @@ public class MapperAnnotationBuilder {
     }
     if (errorIfNoMatch && annotationWrapper == null && !statementAnnotations.isEmpty()) {
       // Annotations exist, but there is no matching one for the specified databaseId
+      // 方法上有匹配的注解，但是注解的databaseId属性值与configuration.getDatabaseId()不匹配
       throw new BuilderException(
           String.format(
               "Could not find a statement annotation that correspond a current database or default statement on method '%s.%s'. Current database id is [%s].",

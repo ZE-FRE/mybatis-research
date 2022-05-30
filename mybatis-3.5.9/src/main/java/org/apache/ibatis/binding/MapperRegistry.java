@@ -70,6 +70,7 @@ public class MapperRegistry {
       boolean loadCompleted = false;
       try {
         // 解析Mapper接口之前，存入Map
+        // Session#getMapper(Class.class)方法，就是从这个Map里取MapperProxyFactory，通过它生成Mapper的代理
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the

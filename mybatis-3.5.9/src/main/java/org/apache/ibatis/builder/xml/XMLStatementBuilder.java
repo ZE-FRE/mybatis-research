@@ -69,13 +69,18 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     String nodeName = context.getNode().getNodeName();
+    // 得到解析节点的类型
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    // 解析节点是否是select
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+    // 是否刷新缓存，如果未指定，且sql不是select，则默认刷新
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
+    // 是否使用缓存，select默认使用
     boolean useCache = context.getBooleanAttribute("useCache", isSelect);
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
     // Include Fragments before parsing
+    // 解析前处理include节点，替换为处理好的sql节点
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     includeParser.applyIncludes(context.getNode());
 
@@ -101,7 +106,11 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
+    // 确定StatementType，默认PREPARED，即会采用PreparedStatement
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
+    /*
+     * 下面都是获取属性值
+     */
     Integer fetchSize = context.getIntAttribute("fetchSize");
     Integer timeout = context.getIntAttribute("timeout");
     String parameterMap = context.getStringAttribute("parameterMap");
@@ -117,6 +126,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     String keyColumn = context.getStringAttribute("keyColumn");
     String resultSets = context.getStringAttribute("resultSets");
 
+    // 实例化MappedStatement并放入Configuration
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
         resultSetTypeEnum, flushCache, useCache, resultOrdered,

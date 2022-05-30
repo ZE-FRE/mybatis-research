@@ -39,6 +39,8 @@ public final class MappedStatement {
   private Configuration configuration;
   /**
    * statement id，用于唯一标识statement
+   * xml方式的mappedStatementId为：statement(select|insert|update|delete)的id属性
+   * 注解方式的mappedStatementId为：Mapper接口全限定名.方法名
    */
   private String id;
   private Integer fetchSize;
