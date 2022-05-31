@@ -24,10 +24,15 @@ import org.apache.ibatis.binding.MapperProxy.MapperMethodInvoker;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * 生成Mapper Proxy的工厂
+ *
  * @author Lasse Voss
  */
 public class MapperProxyFactory<T> {
 
+  /**
+   * the class of Mapper Interface
+   */
   private final Class<T> mapperInterface;
   private final Map<Method, MapperMethodInvoker> methodCache = new ConcurrentHashMap<>();
 

@@ -715,6 +715,7 @@ public class Configuration {
     executorType = executorType == null ? defaultExecutorType : executorType;
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
     Executor executor;
+    // 根据executorType实例化对应的Executor
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
@@ -722,9 +723,13 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    // 如果一级缓存处于开启状态(全局缓存，默认开启)，则用CachingExecutor包装原本的Executor
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    // 重要！
+    // 遍历所有的interceptor，根据interceptor上定义的@Intercepts与@Signature注解
+    // 是否需要对Executor进行动态代理，如需要则生成Executor的代理对象
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }

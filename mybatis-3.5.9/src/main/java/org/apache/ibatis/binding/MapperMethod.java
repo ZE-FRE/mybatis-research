@@ -39,6 +39,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * Mapper接口方法
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -54,6 +56,14 @@ public class MapperMethod {
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
+  /**
+   * 执行Mapper方法
+   *
+   * @param sqlSession sqlSession
+   * @param args 参数
+   * @date 2022/5/30 17:11
+   * @return java.lang.Object
+   */
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
     switch (command.getType()) {
@@ -72,19 +82,24 @@ public class MapperMethod {
         result = rowCountResult(sqlSession.delete(command.getName(), param));
         break;
       }
+      // select方法，支持使用void、Collection、Array、Map、Cursor、Optional返回类型
       case SELECT:
+        // 方法返回值是void且入参有ResultHandler
         if (method.returnsVoid() && method.hasResultHandler()) {
           executeWithResultHandler(sqlSession, args);
           result = null;
-        } else if (method.returnsMany()) {
+        } else if (method.returnsMany()) { // 方法返回值是数组或集合
           result = executeForMany(sqlSession, args);
-        } else if (method.returnsMap()) {
+        } else if (method.returnsMap()) { // 方法返回值是Map
           result = executeForMap(sqlSession, args);
-        } else if (method.returnsCursor()) {
+        } else if (method.returnsCursor()) { // 方法返回值是Cursor
           result = executeForCursor(sqlSession, args);
-        } else {
+        } else { // 方法返回值是单个实体对象或Optional
+          // 转换参数
           Object param = method.convertArgsToSqlCommandParam(args);
+          // 查询单条数据
           result = sqlSession.selectOne(command.getName(), param);
+          // 若返回值是Optional，用Optional包装
           if (method.returnsOptional()
               && (result == null || !method.getReturnType().equals(result.getClass()))) {
             result = Optional.ofNullable(result);
@@ -104,6 +119,14 @@ public class MapperMethod {
     return result;
   }
 
+  /**
+   * 处理insert、update、delete操作的返回结果
+   * 支持void、Integer/int、Long/long、Boolean/boolean的返回类型
+   *
+   * @param rowCount 数据库insert、update、delete操作返回值(受影响的行)
+   * @date 2022/5/31 10:38
+   * @return java.lang.Object
+   */
   private Object rowCountResult(int rowCount) {
     final Object result;
     if (method.returnsVoid()) {
@@ -216,8 +239,16 @@ public class MapperMethod {
 
   }
 
+  /**
+   * 描述statement id以及sql类型(增、删、改、查、Flush)
+   *
+   * @date 2022/5/31 10:07
+   */
   public static class SqlCommand {
 
+    /**
+     * MappedStatement id
+     */
     private final String name;
     private final SqlCommandType type;
 
@@ -231,6 +262,7 @@ public class MapperMethod {
           name = null;
           type = SqlCommandType.FLUSH;
         } else {
+          // 未找到MappedStatement
           throw new BindingException("Invalid bound statement (not found): "
               + mapperInterface.getName() + "." + methodName);
         }
@@ -251,14 +283,27 @@ public class MapperMethod {
       return type;
     }
 
+    /**
+     * 递归查找Mapper接口方法对应的{@link MappedStatement}
+     *
+     * @param mapperInterface Mapper接口类
+     * @param methodName Mapper接口方法名
+     * @param declaringClass Mapper接口方法所属类
+     * @param configuration 配置
+     * @date 2022/5/31 9:56
+     * @return org.apache.ibatis.mapping.MappedStatement
+     */
     private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
         Class<?> declaringClass, Configuration configuration) {
+      // Mapper接口方法的statementId
       String statementId = mapperInterface.getName() + "." + methodName;
       if (configuration.hasStatement(statementId)) {
+        // 找到了
         return configuration.getMappedStatement(statementId);
       } else if (mapperInterface.equals(declaringClass)) {
         return null;
       }
+      // 递归向Mapper父接口查找
       for (Class<?> superInterface : mapperInterface.getInterfaces()) {
         if (declaringClass.isAssignableFrom(superInterface)) {
           MappedStatement ms = resolveMappedStatement(superInterface, methodName,
@@ -272,17 +317,52 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * Mapper接口方法签名
+   *
+   * @date 2022/5/31 10:17
+   */
   public static class MethodSignature {
 
+    /**
+     * 是否返回数组或集合
+     */
     private final boolean returnsMany;
+    /**
+     * 是否返回Map
+     */
     private final boolean returnsMap;
+    /**
+     * 是否返回void
+     */
     private final boolean returnsVoid;
+    /**
+     * 是否返回Cursor
+     */
     private final boolean returnsCursor;
+    /**
+     * 是否返回Optional
+     */
     private final boolean returnsOptional;
+    /**
+     * Mapper接口方法返回类型
+     */
     private final Class<?> returnType;
+    /**
+     * 当返回Map时{@link MapKey#value()}的值
+     */
     private final String mapKey;
+    /**
+     * ResultHandler的参数索引
+     */
     private final Integer resultHandlerIndex;
+    /**
+     * RowBounds(一般用于分页功能)的参数索引
+     */
     private final Integer rowBoundsIndex;
+    /**
+     * Mapper接口方法入参解析器
+     */
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
@@ -305,6 +385,16 @@ public class MapperMethod {
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 
+    /**
+     * Mapper接口入参的转换
+     * 1.如果参数为空，则param为null；
+     * 2.如果参数只有一个且不包含Param注解，则param就是该入参对象；
+     * 3.如果参数大于一个或包含了Param注解，则param是一个Map<String, Object>，key为注解Param的值，value为对应入参对象。
+     *
+     * @param args
+     * @date 2022/5/31 10:44
+     * @return java.lang.Object
+     */
     public Object convertArgsToSqlCommandParam(Object[] args) {
       return paramNameResolver.getNamedParams(args);
     }

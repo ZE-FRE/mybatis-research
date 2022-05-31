@@ -5,7 +5,7 @@ package org.apache.ibatis.zefre.entity;
 import java.util.Objects;
 
 /**
- * @author pujian
+ * @author zefre
  * @date 2022/4/26 15:52
  */
 public class User {

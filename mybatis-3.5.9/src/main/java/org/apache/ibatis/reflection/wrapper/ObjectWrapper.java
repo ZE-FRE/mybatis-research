@@ -41,7 +41,6 @@ public interface ObjectWrapper {
    *
    * @param prop 属性描述
    * @param value 设置的值
-   * @author pujian
    * @date 2022/5/18 16:53
    */
   void set(PropertyTokenizer prop, Object value);

@@ -6,7 +6,7 @@ import org.apache.ibatis.zefre.entity.User;
 
 
 /**
- * @author pujian
+ * @author zefre
  * @date 2022/4/26 15:31
  */
 public interface UserMapper {

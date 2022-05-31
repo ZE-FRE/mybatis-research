@@ -55,7 +55,7 @@ class PluginTest {
   /**
    * 插件嵌套
    *
-   * @author pujian
+   * @author zefre
    * @date 2022/5/11 13:43
    */
   @Intercepts({@Signature(type = Map.class, method = "get", args = {Object.class})})
@@ -69,7 +69,7 @@ class PluginTest {
   /**
    * 两个插件都拦截执行
    *
-   * @author pujian
+   * @author zefre
    * @date 2022/5/11 13:44
    */
   @Test

@@ -43,6 +43,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   private static final Method privateLookupInMethod;
   private final SqlSession sqlSession;
   private final Class<T> mapperInterface;
+  /**
+   * 存放Mapper方法与方法执行器的Map，用作缓存
+   * 之后Mapper再执行到相同的方法，可以直接取出来，不需要再实例化方法执行器
+   */
   private final Map<Method, MapperMethodInvoker> methodCache;
 
   public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface, Map<Method, MapperMethodInvoker> methodCache) {
@@ -77,6 +81,15 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     lookupConstructor = lookup;
   }
 
+  /**
+   * 拦截Mapper的方法
+   *
+   * @param proxy mapper代理对象
+   * @param method 执行的mapper方法
+   * @param args 方法参数
+   * @date 2022/5/30 16:46
+   * @return java.lang.Object
+   */
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
@@ -105,6 +118,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
             throw new RuntimeException(e);
           }
         } else {
+          // Mapper普通方法执行器
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
       });
@@ -128,10 +142,20 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     return lookupConstructor.newInstance(declaringClass, ALLOWED_MODES).unreflectSpecial(method, declaringClass);
   }
 
+  /**
+   * Mapper接口方法执行器
+   *
+   * @date 2022/5/30 16:56
+   */
   interface MapperMethodInvoker {
     Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable;
   }
 
+  /**
+   * Mapper接口普通方法执行器
+   *
+   * @date 2022/5/30 16:58
+   */
   private static class PlainMethodInvoker implements MapperMethodInvoker {
     private final MapperMethod mapperMethod;
 
@@ -146,6 +170,11 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     }
   }
 
+  /**
+   * Mapper接口默认方法(default修饰的方法)执行器
+   *
+   * @date 2022/5/31 9:50
+   */
   private static class DefaultMethodInvoker implements MapperMethodInvoker {
     private final MethodHandle methodHandle;
 
