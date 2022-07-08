@@ -16,8 +16,12 @@
 
 package org.apache.ibatis.zefre.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.zefre.entity.User;
+
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -30,5 +34,14 @@ public interface UserMapper {
     User getById(Integer id);
 
     User getByUsername(String username);
+
+    @Select("select * from t_user where id = #{id} and username = #{username}")
+    User getByIdAndName(@Param("id") Integer id, @Param("username") String username);
+
+    @Select("select * from t_user")
+    List<Map<String, Object>> getMap();
+
+    @Select("${sql}")
+    Map<String, Object> selectOne(@Param("sql") String sql, @Param("param") Map<String, Object> param);
 
 }

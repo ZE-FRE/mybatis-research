@@ -21,6 +21,8 @@ import java.lang.reflect.Method;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * getter、setter方法Invoker
+ *
  * @author Clinton Begin
  */
 public class MethodInvoker implements Invoker {
@@ -31,9 +33,9 @@ public class MethodInvoker implements Invoker {
   public MethodInvoker(Method method) {
     this.method = method;
 
-    if (method.getParameterTypes().length == 1) {
+    if (method.getParameterTypes().length == 1) { // 说明method是setter方法
       type = method.getParameterTypes()[0];
-    } else {
+    } else { // 说明method是getter方法
       type = method.getReturnType();
     }
   }

@@ -58,6 +58,13 @@ public class DefaultParameterHandler implements ParameterHandler {
     return parameterObject;
   }
 
+  /**
+   * 给PreparedStatement设置参数
+   * 调用PreparedStatement#setXxx(setInt、setString等)方法
+   *
+   * @param ps PreparedStatement
+   * @date 2022/7/1 17:22
+   */
   @Override
   public void setParameters(PreparedStatement ps) {
     ErrorContext.instance().activity("setting parameters").object(mappedStatement.getParameterMap().getId());
@@ -66,6 +73,7 @@ public class DefaultParameterHandler implements ParameterHandler {
       for (int i = 0; i < parameterMappings.size(); i++) {
         ParameterMapping parameterMapping = parameterMappings.get(i);
         if (parameterMapping.getMode() != ParameterMode.OUT) {
+          // 参数值
           Object value;
           String propertyName = parameterMapping.getProperty();
           if (boundSql.hasAdditionalParameter(propertyName)) { // issue #448 ask first for additional params
@@ -84,6 +92,7 @@ public class DefaultParameterHandler implements ParameterHandler {
             jdbcType = configuration.getJdbcTypeForNull();
           }
           try {
+            // 替换第i+1个"?"
             typeHandler.setParameter(ps, i + 1, value, jdbcType);
           } catch (TypeException | SQLException e) {
             throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);

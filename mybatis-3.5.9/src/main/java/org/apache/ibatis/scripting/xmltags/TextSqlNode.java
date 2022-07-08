@@ -47,6 +47,7 @@ public class TextSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 对sql中的${}，寻找值来替换
     GenericTokenParser parser = createParser(new BindingTokenParser(context, injectionFilter));
     context.appendSql(parser.parse(text));
     return true;
@@ -66,6 +67,13 @@ public class TextSqlNode implements SqlNode {
       this.injectionFilter = injectionFilter;
     }
 
+    /**
+     * 替换${}
+     *
+     * @param content ${}中的内容
+     * @date 2022/7/1 16:32
+     * @return java.lang.String
+     */
     @Override
     public String handleToken(String content) {
       Object parameter = context.getBindings().get("_parameter");
@@ -74,6 +82,7 @@ public class TextSqlNode implements SqlNode {
       } else if (SimpleTypeRegistry.isSimpleType(parameter.getClass())) {
         context.getBindings().put("value", parameter);
       }
+      // 取得值
       Object value = OgnlCache.getValue(content, context.getBindings());
       String srtValue = value == null ? "" : String.valueOf(value); // issue #274 return "" instead of "null"
       checkInjection(srtValue);

@@ -25,6 +25,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author zefre
@@ -51,6 +54,19 @@ public class CustomTest {
     Assertions.assertEquals(userTemplate, user);
     user = userMapper.getByUsername("张三");
     Assertions.assertEquals(userTemplate, user);
+
+    user = userMapper.getByIdAndName(1, "张三");
+    Assertions.assertEquals(userTemplate, user);
+
+    List<Map<String, Object>> list = userMapper.getMap();
+    list.forEach(System.out::println);
+
+    String sql = "select * from t_user where id = #{param.id}";
+    Map<String, Object> param = new HashMap<>();
+    param.put("id", 1);
+
+    Map<String, Object> map = userMapper.selectOne(sql, param);
+    System.out.println(map);
   }
 
 }

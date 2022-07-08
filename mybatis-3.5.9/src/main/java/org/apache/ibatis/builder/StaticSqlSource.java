@@ -27,7 +27,10 @@ import org.apache.ibatis.session.Configuration;
  */
 public class StaticSqlSource implements SqlSource {
 
+  // 完整的静态sql，只包含占位符"?"，如：
+  // select * from t_user where id = ? OR name = ?
   private final String sql;
+  // 占位符"?"对应的参数描述，此List的顺序与"?"一一对应
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 

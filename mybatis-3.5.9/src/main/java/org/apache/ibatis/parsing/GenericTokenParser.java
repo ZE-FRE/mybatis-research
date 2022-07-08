@@ -30,6 +30,13 @@ public class GenericTokenParser {
     this.handler = handler;
   }
 
+  /**
+   * 处理${}、#{}
+   *
+   * @param text 主要是sql语句
+   * @date 2022/7/1 15:47
+   * @return java.lang.String
+   */
   public String parse(String text) {
     if (text == null || text.isEmpty()) {
       return "";
@@ -65,6 +72,7 @@ public class GenericTokenParser {
             offset = end + closeToken.length();
             end = text.indexOf(closeToken, offset);
           } else {
+            // 得到${}或#{}里的字符串，如${name}、#{name}就得到name
             expression.append(src, offset, end - offset);
             break;
           }
@@ -74,6 +82,7 @@ public class GenericTokenParser {
           builder.append(src, start, src.length - start);
           offset = src.length;
         } else {
+          // 替换${}或#{}，如替换#{name}为jdbc占位符"?"
           builder.append(handler.handleToken(expression.toString()));
           offset = end + closeToken.length();
         }
