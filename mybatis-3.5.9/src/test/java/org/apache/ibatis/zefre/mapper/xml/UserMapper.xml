@@ -23,6 +23,9 @@
 
     <select id="getByUsername" resultType="org.apache.ibatis.zefre.entity.User">
         select * from t_user where username = #{username}
+        <if test="flag">
+          AND 1=1
+        </if>
     </select>
 
 </mapper>

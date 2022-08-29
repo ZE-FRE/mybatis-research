@@ -723,7 +723,7 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
-    // 如果一级缓存处于开启状态(全局缓存，默认开启)，则用CachingExecutor包装原本的Executor
+    // 如果二级缓存处于开启状态(全局缓存，默认开启)，则用CachingExecutor包装原本的Executor
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }

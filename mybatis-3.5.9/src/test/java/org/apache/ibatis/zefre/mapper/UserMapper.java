@@ -33,7 +33,7 @@ public interface UserMapper {
     @Select("select * from t_user where id = #{id}")
     User getById(Integer id);
 
-    User getByUsername(String username);
+    User getByUsername(@Param("username") String username, @Param("flag") boolean flag);
 
     @Select("select * from t_user where id = #{id} and username = #{username}")
     User getByIdAndName(@Param("id") Integer id, @Param("username") String username);

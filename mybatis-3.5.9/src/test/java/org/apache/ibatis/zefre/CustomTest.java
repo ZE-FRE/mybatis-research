@@ -52,7 +52,7 @@ public class CustomTest {
 
     User user = userMapper.getById(1);
     Assertions.assertEquals(userTemplate, user);
-    user = userMapper.getByUsername("张三");
+    user = userMapper.getByUsername("张三", true);
     Assertions.assertEquals(userTemplate, user);
 
     user = userMapper.getByIdAndName(1, "张三");
